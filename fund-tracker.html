@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>私募基金收益追蹤</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@300;400;500;700&display=swap');
+:root{
+  --bg:#0a0e1a;--s1:#111827;--s2:#1a2235;--bd:#1e2d45;
+  --a1:#00d4aa;--a2:#f59e0b;--a3:#6366f1;
+  --tx:#e2e8f0;--dm:#64748b;--mu:#334155;
+  --rd:#ef4444;--gn:#10b981;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{background:var(--bg);color:var(--tx);font-family:'Noto Sans TC',sans-serif;font-weight:300;min-height:100vh;padding:20px 14px 40px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 20%,rgba(0,212,170,.04),transparent 50%),radial-gradient(ellipse at 80% 80%,rgba(99,102,241,.04),transparent 50%);pointer-events:none;z-index:0}
+.wrap{max-width:860px;margin:0 auto;position:relative;z-index:1}
+
+/* Header */
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:24px;padding-bottom:18px;border-bottom:1px solid var(--bd)}
+.htitle span{display:block;font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--dm);margin-bottom:3px}
+.htitle h1{font-family:'DM Serif Display',serif;font-size:clamp(24px,6vw,34px);color:var(--a1);line-height:1.1}
+.hmeta{font-family:'DM Mono',monospace;font-size:12px;color:var(--dm);text-align:right}
+.hmeta .month{color:var(--a1);margin-top:2px}
+
+/* Cards */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:20px}
+.card{background:var(--s1);border:1px solid var(--bd);border-radius:12px;padding:14px;position:relative;overflow:hidden}
+.card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.ca1::before{background:linear-gradient(90deg,var(--a1),transparent)}
+.ca2::before{background:linear-gradient(90deg,var(--a2),transparent)}
+.ca3::before{background:linear-gradient(90deg,var(--a3),transparent)}
+.crd::before{background:linear-gradient(90deg,var(--rd),transparent)}
+.clbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dm);margin-bottom:6px}
+.cval{font-family:'DM Mono',monospace;font-size:clamp(16px,3.5vw,22px);font-weight:500;display:flex;align-items:baseline;gap:5px;flex-wrap:wrap}
+.ca1 .cval{color:var(--a1)}.ca2 .cval{color:var(--a2)}.ca3 .cval{color:var(--a3)}.crd .cval{color:var(--rd)}
+.csub{font-size:11px;color:var(--dm);margin-top:4px}
+.bdiff{font-family:'DM Mono',monospace;font-size:12px}
+
+/* Section */
+.sec{background:var(--s1);border:1px solid var(--bd);border-radius:14px;padding:18px;margin-bottom:16px}
+.stitle{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--a1);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.stitle::after{content:'';flex:1;height:1px;background:var(--bd)}
+
+/* Form */
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:14px}
+.fg{display:flex;flex-direction:column;gap:5px}
+.flbl{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--dm)}
+input[type=number],input[type=date],select{background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-family:'DM Mono',monospace;font-size:14px;padding:9px 11px;outline:none;width:100%;transition:border-color .2s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus{border-color:var(--a1)}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2364748b' fill='none' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:30px}
+
+/* Rate buttons */
+.rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px;margin-bottom:10px}
+.rbtn{background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--dm);cursor:pointer;font-family:'DM Mono',monospace;font-size:13px;padding:8px 4px;text-align:center;transition:all .15s;user-select:none}
+.rbtn:active{transform:scale(.95)}
+.rbtn.on{background:rgba(0,212,170,.12);border-color:var(--a1);color:var(--a1)}
+
+/* Stepper */
+.stepper{display:flex;align-items:center;gap:8px}
+.sbtn{background:var(--s2);border:1px solid var(--bd);border-radius:6px;color:var(--tx);font-size:22px;width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:border-color .2s;user-select:none}
+.sbtn:active{transform:scale(.9)}
+.sval{flex:1;text-align:center}
+.smain{font-family:'DM Mono',monospace;font-size:22px;color:var(--a1)}
+.ssub{font-size:11px;color:var(--dm);margin-top:2px}
+
+/* Buttons */
+.btn{border:none;border-radius:8px;cursor:pointer;font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:700;padding:10px 18px;transition:all .2s;display:inline-flex;align-items:center;gap:6px}
+.btn:active{transform:scale(.97)}
+.btn-add{background:var(--a1);color:#0a0e1a}
+.btn-outline{background:transparent;border:1px solid var(--bd);color:var(--dm)}
+.btn-save{background:var(--a3);color:#fff}
+.btn-del{background:transparent;border:1px solid var(--rd);color:var(--rd);font-weight:400}
+.btn-del:hover{background:rgba(239,68,68,.1)}
+.prev-line{font-family:'DM Mono',monospace;font-size:13px;color:var(--a1)}
+
+/* Contract items */
+.clist{display:flex;flex-direction:column;gap:10px}
+.citem{background:var(--s2);border:1px solid var(--bd);border-radius:10px;padding:13px 14px 13px 18px;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;position:relative;overflow:hidden;transition:border-color .2s}
+.citem::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--a1);border-radius:3px 0 0 3px}
+.citem.etm{background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.45)}.citem.etm::before{background:var(--rd);width:5px}
+.citem.enm{border-color:rgba(245,158,11,.35)}.citem.enm::before{background:var(--a2)}
+.chips{display:flex;flex-wrap:wrap;gap:4px 12px;margin-bottom:5px}
+.chip{font-size:12px;color:var(--dm)}
+.chip strong{font-family:'DM Mono',monospace;color:var(--tx);font-weight:400}
+.hi{color:var(--a1)!important}.am{color:var(--a2)!important}.rd{color:var(--rd)!important}
+.tag{display:inline-block;border-radius:4px;font-size:10px;letter-spacing:1px;padding:2px 6px;text-transform:uppercase;border:1px solid}
+.tag-on{background:rgba(0,212,170,.1);border-color:rgba(0,212,170,.3);color:var(--a1)}
+.tag-def{background:rgba(99,102,241,.1);border-color:rgba(99,102,241,.3);color:var(--a3)}
+.tag-etm{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.5);color:var(--rd)}
+.tag-enm{background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.4);color:var(--a2)}
+.tag-exp{background:rgba(100,116,139,.1);border-color:rgba(100,116,139,.3);color:var(--dm)}
+.arow{display:flex;align-items:center;gap:6px;font-size:12px;margin-top:7px;padding:5px 8px;border-radius:6px;border:1px solid}
+.arow.rd{background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.35);color:var(--rd)}
+.arow.am{background:rgba(245,158,11,.07);border-color:rgba(245,158,11,.3);color:var(--a2)}
+.mincome{font-family:'DM Mono',monospace;font-size:17px;color:var(--a1);font-weight:500;text-align:right;white-space:nowrap}
+.mincome span{display:block;font-size:10px;color:var(--dm);letter-spacing:1px;text-transform:uppercase;font-family:'Noto Sans TC',sans-serif;font-weight:300;margin-bottom:2px}
+.edit-btn{background:transparent;border:1px solid var(--a3);border-radius:7px;color:var(--a3);cursor:pointer;font-size:12px;padding:6px 11px;white-space:nowrap;transition:all .2s;font-family:'Noto Sans TC',sans-serif}
+.edit-btn:active{transform:scale(.95)}
+.empty{text-align:center;padding:32px 20px;color:var(--mu);font-size:13px}
+.empty .ico{font-size:28px;margin-bottom:8px}
+
+/* Next month box */
+.nmbox{background:rgba(0,212,170,.04);border:1px solid rgba(0,212,170,.2);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.nmlbl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--dm);margin-bottom:4px}
+.nmval{font-family:'DM Serif Display',serif;font-size:28px;color:var(--a1);display:flex;align-items:baseline;gap:8px}
+.nmbreak{font-size:12px;color:var(--dm);margin-top:4px}
+
+/* Modal */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.78);backdrop-filter:blur(5px);z-index:200;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;pointer-events:none;transition:opacity .2s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--s1);border:1px solid var(--bd);border-radius:16px;padding:20px;width:100%;max-width:500px;transform:translateY(16px);transition:transform .2s;max-height:90vh;overflow-y:auto}
+.overlay.open .modal{transform:translateY(0)}
+.mtitle{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--a3);margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
+.mclose{background:none;border:none;color:var(--dm);cursor:pointer;font-size:20px;line-height:1;padding:0}
+.mprev{font-family:'DM Mono',monospace;font-size:13px;color:var(--a1);margin-top:10px;padding:8px 10px;background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.2);border-radius:8px;display:none}
+.mact{display:flex;justify-content:space-between;align-items:center;margin-top:16px;padding-top:14px;border-top:1px solid var(--bd);flex-wrap:wrap;gap:8px}
+.confirm-del{display:none;align-items:center;gap:8px}
+.confirm-del.show{display:flex}
+
+@media(max-width:480px){
+  .citem{grid-template-columns:1fr}
+  .mincome{text-align:left}
+  .mact{flex-direction:column;align-items:stretch}
+  .mact>div{display:flex;gap:8px}
+  .mact>div .btn{flex:1}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- Header -->
+<div class="hdr">
+  <div class="htitle">
+    <span>私募基金</span>
+    <h1>收益追蹤</h1>
+  </div>
+  <div class="hmeta">
+    <div id="hDate"></div>
+    <div class="month" id="hMonth"></div>
+  </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="cards">
+  <div class="card ca1">
+    <div class="clbl">本月總獲利</div>
+    <div class="cval"><span id="cMonthly">$0</span></div>
+    <div class="csub" id="cActiveCnt">0 筆合約生效中</div>
+  </div>
+  <div class="card ca2">
+    <div class="clbl">總投入本金</div>
+    <div class="cval">
+      <span id="cPrincipal">$0</span>
+      <span class="bdiff" id="cNewBadge" style="color:var(--gn)"></span>
+    </div>
+    <div class="csub" id="cContractCnt">共 0 筆合約</div>
+  </div>
+  <div class="card ca3">
+    <div class="clbl">下月預估獲利</div>
+    <div class="cval">
+      <span id="cNext">$0</span>
+      <span class="bdiff" id="cNextDiff"></span>
+    </div>
+    <div class="csub">含新生效合約</div>
+  </div>
+  <div class="card crd" id="cExpCard" style="display:none">
+    <div class="clbl">即將到期提醒</div>
+    <div class="cval"><span id="cExpVal">—</span></div>
+    <div class="csub">合約即將到期</div>
+  </div>
+</div>
+
+<!-- 新增合約 -->
+<div class="sec">
+  <div class="stitle">新增合約</div>
+  <div style="margin-bottom:12px">
+    <div class="flbl" style="margin-bottom:7px">月利率</div>
+    <div class="rgrid" id="addRG">
+      <div class="rbtn" data-r="1.2">1.2%</div>
+      <div class="rbtn" data-r="1.5">1.5%</div>
+      <div class="rbtn" data-r="1.7">1.7%</div>
+      <div class="rbtn" data-r="1.8">1.8%</div>
+      <div class="rbtn" data-r="2.0">2.0%</div>
+      <div class="rbtn" data-r="2.2">2.2%</div>
+      <div class="rbtn" data-r="custom">自定義</div>
+    </div>
+    <input type="number" id="addCR" placeholder="輸入利率 %" step="0.1" min="0.1" max="10" style="display:none;max-width:150px">
+  </div>
+  <div class="fgrid">
+    <div class="fg">
+      <div class="flbl">投入本金（10萬為單位）</div>
+      <div class="stepper">
+        <button class="sbtn" id="aMinus">−</button>
+        <div class="sval">
+          <div class="smain" id="aPD">10萬</div>
+          <div class="ssub" id="aPS">$100,000</div>
+        </div>
+        <button class="sbtn" id="aPlus">＋</button>
+      </div>
+    </div>
+    <div class="fg">
+      <div class="flbl">合約期限</div>
+      <select id="aDur">
+        <option value="6">6 個月</option>
+        <option value="12">12 個月</option>
+      </select>
+    </div>
+    <div class="fg">
+      <div class="flbl">合約生效日（限週三）</div>
+      <input type="date" id="aDate">
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <button class="btn btn-add" id="aAddBtn">＋ 新增合約</button>
+    <div class="prev-line" id="aPrev"></div>
+  </div>
+</div>
+
+<!-- 合約列表 -->
+<div class="sec">
+  <div class="stitle">合約列表</div>
+  <div class="clist" id="cList">
+    <div class="empty"><div class="ico">📋</div>尚無合約，請新增第一筆</div>
+  </div>
+</div>
+
+<!-- 下月預估 -->
+<div class="sec" id="nmSec" style="display:none">
+  <div class="stitle">下月收益預估</div>
+  <div class="nmbox">
+    <div>
+      <div class="nmlbl" id="nmLabel"></div>
+      <div class="nmval">
+        <span id="nmVal">$0</span>
+        <span id="nmDiff" style="font-family:'DM Mono',monospace;font-size:14px"></span>
+      </div>
+      <div class="nmbreak" id="nmBreak"></div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:10px;color:var(--dm);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px">年化收益</div>
+      <div style="font-family:'DM Mono',monospace;font-size:20px;color:var(--a2)" id="nmAnnual">$0</div>
+    </div>
+  </div>
+</div>
+
+</div><!-- /wrap -->
+
+<!-- Edit Modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <div class="mtitle">
+      編輯合約
+      <button class="mclose" id="mX">✕</button>
+    </div>
+    <div style="margin-bottom:12px">
+      <div class="flbl" style="margin-bottom:7px">月利率</div>
+      <div class="rgrid" id="eRG">
+        <div class="rbtn" data-r="1.2">1.2%</div>
+        <div class="rbtn" data-r="1.5">1.5%</div>
+        <div class="rbtn" data-r="1.7">1.7%</div>
+        <div class="rbtn" data-r="1.8">1.8%</div>
+        <div class="rbtn" data-r="2.0">2.0%</div>
+        <div class="rbtn" data-r="2.2">2.2%</div>
+        <div class="rbtn" data-r="custom">自定義</div>
+      </div>
+      <input type="number" id="eCR" placeholder="輸入利率 %" step="0.1" min="0.1" max="10" style="display:none;max-width:150px">
+    </div>
+    <div class="fgrid">
+      <div class="fg">
+        <div class="flbl">投入本金（10萬為單位）</div>
+        <div class="stepper">
+          <button class="sbtn" id="eMinus">−</button>
+          <div class="sval">
+            <div class="smain" style="color:var(--a3)" id="ePD">10萬</div>
+            <div class="ssub" id="ePS">$100,000</div>
+          </div>
+          <button class="sbtn" id="ePlus">＋</button>
+        </div>
+      </div>
+      <div class="fg">
+        <div class="flbl">合約期限</div>
+        <select id="eDur">
+          <option value="6">6 個月</option>
+          <option value="12">12 個月</option>
+        </select>
+      </div>
+      <div class="fg">
+        <div class="flbl">合約生效日（限週三）</div>
+        <input type="date" id="eDate">
+      </div>
+    </div>
+    <div class="mprev" id="ePrev"></div>
+
+    <div style="margin-top:12px">
+      <div class="flbl" style="margin-bottom:6px">備忘錄</div>
+      <textarea id="eMemo" placeholder="輸入備注、提醒或說明…" style="background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font-family:'Noto Sans TC',sans-serif;font-size:13px;font-weight:300;padding:9px 11px;outline:none;width:100%;resize:none;height:80px;line-height:1.6;transition:border-color .2s"></textarea>
+    </div>
+    <div class="mact">
+      <div>
+        <div class="confirm-del" id="confirmDel">
+          <span style="font-size:12px;color:var(--rd)">確定刪除？</span>
+          <button class="btn btn-del" style="padding:6px 12px;font-size:12px" id="mDelConfirm">確定</button>
+          <button class="btn btn-outline" style="padding:6px 12px;font-size:12px" id="mDelCancel">取消</button>
+        </div>
+        <button class="btn btn-del" id="mDel">🗑 刪除合約</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-outline" id="mCancel">取消</button>
+        <button class="btn btn-save" id="mSave">儲存變更</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// 資料層
+// ═══════════════════════════════════════════════
+const LS_KEY = 'fund_v4';
+let DB = [];
+let nextId = 1;
+let editingId = null;
+
+function dbLoad() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (!raw) return;
+    const d = JSON.parse(raw);
+    DB = Array.isArray(d.contracts) ? d.contracts : [];
+    nextId = d.nextId || DB.length + 1;
+  } catch(e) { DB = []; nextId = 1; }
+}
+
+function dbSave() {
+  localStorage.setItem(LS_KEY, JSON.stringify({ contracts: DB, nextId }));
+}
+
+// ═══════════════════════════════════════════════
+// 日期工具
+// ═══════════════════════════════════════════════
+function today() { const d = new Date(); d.setHours(0,0,0,0); return d; }
+function isWed(s) { return new Date(s+'T12:00:00').getDay() === 3; }
+function addMonths(s, n) {
+  const d = new Date(s+'T12:00:00');
+  d.setMonth(d.getMonth() + n);
+  return d.toISOString().split('T')[0];
+}
+function nextWed() {
+  const d = new Date();
+  const diff = (3 - d.getDay() + 7) % 7 || 7;
+  d.setDate(d.getDate() + diff);
+  return d.toISOString().split('T')[0];
+}
+
+// ═══════════════════════════════════════════════
+// 合約狀態
+// ═══════════════════════════════════════════════
+
+// 判斷某月份是否在 firstIncome 和 endDate 之間（以月為單位）
+function activeInMonth(c, year, month) {
+  const fi = new Date(c.firstIncome);
+  const en = new Date(c.endDate);
+  const fiYM = fi.getFullYear()*12 + fi.getMonth();
+  const enYM = en.getFullYear()*12 + en.getMonth();
+  const tYM  = year*12 + month;
+  return fiYM <= tYM && tYM <= enYM;
+}
+
+function isActive(c) {
+  const t = today();
+  return activeInMonth(c, t.getFullYear(), t.getMonth());
+}
+function expThisMonth(c) {
+  const t = today(), e = new Date(c.endDate);
+  return e.getFullYear()===t.getFullYear() && e.getMonth()===t.getMonth();
+}
+function expNextMonth(c) {
+  const t = today();
+  const nm = new Date(t.getFullYear(), t.getMonth()+1, 1);
+  const e = new Date(c.endDate);
+  return e.getFullYear()===nm.getFullYear() && e.getMonth()===nm.getMonth();
+}
+function activeNextMonth(c) {
+  const t = today();
+  return activeInMonth(c, t.getFullYear(), t.getMonth()+1);
+}
+
+function makeContract(rate, principal, duration, startDate, id, memo) {
+  return {
+    id: id ?? nextId++,
+    rate: parseFloat(rate),
+    principal: parseInt(principal),
+    duration: parseInt(duration),
+    startDate,
+    endDate: addMonths(startDate, parseInt(duration)),
+    firstIncome: addMonths(startDate, 1),
+    monthly: Math.round(parseInt(principal) * parseFloat(rate) / 100),
+    memo: memo || ''
+  };
+}
+
+// ═══════════════════════════════════════════════
+// 新增表單
+// ═══════════════════════════════════════════════
+let addRate = null, addUnits = 1;
+
+function updateAddPrin() {
+  document.getElementById('aPD').textContent = (addUnits*10)+'萬';
+  document.getElementById('aPS').textContent = '$'+(addUnits*100000).toLocaleString();
+  refreshAddPrev();
+}
+
+function refreshAddPrev() {
+  const d = document.getElementById('aDur').value;
+  const s = document.getElementById('aDate').value;
+  const el = document.getElementById('aPrev');
+  if (addRate && s) {
+    const m = Math.round(addUnits*100000*addRate/100);
+    el.textContent = `→ 每月獲利 $${m.toLocaleString()}　到期 ${addMonths(s,parseInt(d))}`;
+  } else { el.textContent=''; }
+}
+
+document.getElementById('addRG').addEventListener('click', e=>{
+  const b = e.target.closest('.rbtn'); if(!b) return;
+  document.querySelectorAll('#addRG .rbtn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  const r = b.dataset.r;
+  if (r==='custom') {
+    document.getElementById('addCR').style.display='block';
+    addRate = parseFloat(document.getElementById('addCR').value)||null;
+  } else {
+    document.getElementById('addCR').style.display='none';
+    addRate = parseFloat(r);
+  }
+  refreshAddPrev();
+});
+document.getElementById('addCR').addEventListener('input', e=>{
+  addRate = parseFloat(e.target.value)||null; refreshAddPrev();
+});
+document.getElementById('aMinus').addEventListener('click', ()=>{ addUnits=Math.max(1,addUnits-1); updateAddPrin(); });
+document.getElementById('aPlus').addEventListener('click', ()=>{ addUnits++; updateAddPrin(); });
+document.getElementById('aDur').addEventListener('change', refreshAddPrev);
+document.getElementById('aDate').addEventListener('change', function(){
+  if (this.value && !isWed(this.value)) { alert('合約生效日只能選擇週三！'); this.value=nextWed(); }
+  refreshAddPrev();
+});
+
+document.getElementById('aAddBtn').addEventListener('click', ()=>{
+  const s = document.getElementById('aDate').value;
+  if (!addRate) { alert('請選擇利率'); return; }
+  if (!s||!isWed(s)) { alert('請選擇週三作為生效日'); return; }
+  const newC = makeContract(addRate, addUnits*100000, document.getElementById('aDur').value, s);
+  DB.push(newC);
+  dbSave(); render();
+  // reset
+  addRate=null; addUnits=1;
+  document.querySelectorAll('#addRG .rbtn').forEach(x=>x.classList.remove('on'));
+  document.getElementById('addCR').style.display='none';
+  document.getElementById('addCR').value='';
+  updateAddPrin();
+  document.getElementById('aDate').value=nextWed();
+  document.getElementById('aPrev').textContent='';
+});
+
+// ═══════════════════════════════════════════════
+// Edit Modal
+// ═══════════════════════════════════════════════
+let editRate=null, editUnits=1;
+const RATES=[1.2,1.5,1.7,1.8,2.0,2.2];
+
+function updateEditPrin() {
+  document.getElementById('ePD').textContent=(editUnits*10)+'萬';
+  document.getElementById('ePS').textContent='$'+(editUnits*100000).toLocaleString();
+  refreshEditPrev();
+}
+
+function refreshEditPrev() {
+  const d=document.getElementById('eDur').value;
+  const s=document.getElementById('eDate').value;
+  const el=document.getElementById('ePrev');
+  if (editRate&&s) {
+    const m=Math.round(editUnits*100000*editRate/100);
+    el.style.display='block';
+    el.textContent=`每月獲利 $${m.toLocaleString()}　利率 ${editRate}%　到期 ${addMonths(s,parseInt(d))}`;
+  } else { el.style.display='none'; }
+}
+
+function openModal(id) {
+  const c = DB.find(x=>x.id===id);
+  if (!c) return;
+  editingId = id;
+  editRate = c.rate;
+  editUnits = Math.round(c.principal/100000);
+
+  document.querySelectorAll('#eRG .rbtn').forEach(x=>x.classList.remove('on'));
+  const idx = RATES.findIndex(r=>Math.abs(r-c.rate)<0.001);
+  if (idx>=0) {
+    document.querySelectorAll('#eRG .rbtn')[idx].classList.add('on');
+    document.getElementById('eCR').style.display='none';
+  } else {
+    document.querySelectorAll('#eRG .rbtn')[6].classList.add('on');
+    document.getElementById('eCR').style.display='block';
+    document.getElementById('eCR').value=c.rate;
+  }
+  updateEditPrin();
+  document.getElementById('eDur').value=c.duration;
+  document.getElementById('eDate').value=c.startDate;
+  document.getElementById('eMemo').value=c.memo||'';
+  document.getElementById('confirmDel').classList.remove('show');
+  document.getElementById('mDel').style.display='';
+  refreshEditPrev();
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('overlay').classList.remove('open');
+  editingId=null;
+}
+
+document.getElementById('eRG').addEventListener('click', e=>{
+  const b=e.target.closest('.rbtn'); if(!b) return;
+  document.querySelectorAll('#eRG .rbtn').forEach(x=>x.classList.remove('on'));
+  b.classList.add('on');
+  const r=b.dataset.r;
+  if(r==='custom'){
+    document.getElementById('eCR').style.display='block';
+    editRate=parseFloat(document.getElementById('eCR').value)||null;
+  } else {
+    document.getElementById('eCR').style.display='none';
+    editRate=parseFloat(r);
+  }
+  refreshEditPrev();
+});
+document.getElementById('eCR').addEventListener('input', e=>{
+  editRate=parseFloat(e.target.value)||null; refreshEditPrev();
+});
+document.getElementById('eMinus').addEventListener('click',()=>{ editUnits=Math.max(1,editUnits-1); updateEditPrin(); });
+document.getElementById('ePlus').addEventListener('click',()=>{ editUnits++; updateEditPrin(); });
+document.getElementById('eDur').addEventListener('change',refreshEditPrev);
+document.getElementById('eDate').addEventListener('change',function(){
+  if(this.value&&!isWed(this.value)){alert('合約生效日只能選擇週三！');this.value='';}
+  refreshEditPrev();
+});
+document.getElementById('mX').addEventListener('click',closeModal);
+document.getElementById('mCancel').addEventListener('click',closeModal);
+document.getElementById('overlay').addEventListener('click',e=>{if(e.target===document.getElementById('overlay'))closeModal();});
+
+// 刪除流程：點刪除 → 顯示確認 → 確認才真的刪
+document.getElementById('mDel').addEventListener('click',()=>{
+  document.getElementById('mDel').style.display='none';
+  document.getElementById('confirmDel').classList.add('show');
+});
+document.getElementById('mDelCancel').addEventListener('click',()=>{
+  document.getElementById('confirmDel').classList.remove('show');
+  document.getElementById('mDel').style.display='';
+});
+document.getElementById('mDelConfirm').addEventListener('click',()=>{
+  if(editingId===null) return;
+  DB = DB.filter(c=>c.id!==editingId);
+  dbSave(); render(); closeModal();
+});
+
+document.getElementById('mSave').addEventListener('click',()=>{
+  if(editingId===null) return;
+  const s=document.getElementById('eDate').value;
+  const memo=document.getElementById('eMemo').value.trim();
+  if(!editRate){alert('請選擇利率');return;}
+  if(!s||!isWed(s)){alert('請選擇週三作為生效日');return;}
+  const updatedC = makeContract(editRate,editUnits*100000,document.getElementById('eDur').value,s,editingId,memo);
+  DB=DB.map(c=>c.id===editingId?updatedC:c);
+  dbSave(); render(); closeModal();
+});
+
+// ═══════════════════════════════════════════════
+// 渲染
+// ═══════════════════════════════════════════════
+function render() {
+  renderList();
+  renderSummary();
+}
+
+function renderList() {
+  const el=document.getElementById('cList');
+  if(DB.length===0){
+    el.innerHTML='<div class="empty"><div class="ico">📋</div>尚無合約，請新增第一筆</div>';
+    return;
+  }
+  const sorted=[...DB].sort((a,b)=>{
+    const p=c=>expThisMonth(c)?0:expNextMonth(c)?1:isActive(c)?2:new Date(c.firstIncome)>today()?3:4;
+    return p(a)-p(b)||new Date(a.endDate)-new Date(b.endDate);
+  });
+
+  el.innerHTML=sorted.map(c=>{
+    const etm=expThisMonth(c),enm=expNextMonth(c),act=isActive(c);
+    const t=today();
+    const days=Math.ceil((new Date(c.endDate)-t)/86400000);
+    const pending = new Date(c.firstIncome) > new Date(t.getFullYear(), t.getMonth()+1, 0); // 首次收益在當月之後
+    const expired = new Date(c.endDate) < new Date(t.getFullYear(), t.getMonth(), 1);       // 到期日在當月之前
+    const cls=etm?'etm':enm?'enm':'';
+    const stag = act ? '<span class="tag tag-on">生效中</span>' : pending ? '<span class="tag tag-def">待生效</span>' : expired ? '<span class="tag tag-exp">已到期</span>' : '<span class="tag tag-on">生效中</span>';
+    const etag=etm?'<span class="tag tag-etm" style="margin-left:4px">本月到期</span>':enm?'<span class="tag tag-enm" style="margin-left:4px">下月到期</span>':'';
+    const arow=etm?`<div class="arow rd">🔴 本月到期（${c.endDate}）— 請確認是否續約或刪除</div>`:enm?`<div class="arow am">🟡 下月到期（${c.endDate}）— 距今 ${days} 天</div>`:'';
+    return `<div class="citem ${cls}" data-id="${c.id}">
+      <div>
+        <div class="chips" style="margin-bottom:5px">${stag}${etag}</div>
+        <div class="chips">
+          <span class="chip">本金 <strong>$${c.principal.toLocaleString()}</strong> <em style="color:var(--dm);font-size:11px;font-style:normal">(${c.principal/10000}萬)</em></span>
+          <span class="chip">利率 <strong class="hi">${c.rate}%</strong></span>
+          <span class="chip">期限 <strong>${c.duration}月</strong></span>
+          <span class="chip">生效 <strong>${c.startDate}</strong></span>
+          <span class="chip">到期 <strong class="${etm?'rd':enm?'am':''}">${c.endDate}</strong></span>
+          <span class="chip">首次收益 <strong>${c.firstIncome}</strong></span>
+        </div>
+        ${arow}
+        ${c.memo?`<div style="margin-top:7px;font-size:12px;color:var(--dm);background:var(--s1);border-radius:6px;padding:6px 9px;border-left:2px solid var(--a3);line-height:1.5">📝 ${c.memo}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+        <div class="mincome"><span>每月獲利</span>$${c.monthly.toLocaleString()}</div>
+        <button class="edit-btn">編輯 ／ 刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Event delegation — 從 data-id 取得 id，完全不靠 onclick 字串
+  el.querySelectorAll('.edit-btn').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      const id=parseInt(e.target.closest('.citem').dataset.id,10);
+      openModal(id);
+    });
+  });
+}
+
+function renderSummary() {
+  const t=today();
+  const msStart=new Date(t.getFullYear(),t.getMonth(),1);
+  const active=DB.filter(isActive);
+  const nextAll=DB.filter(activeNextMonth);
+  const monthly=active.reduce((s,c)=>s+c.monthly,0);
+  const principal=DB.reduce((s,c)=>s+c.principal,0);  // 所有合約總本金
+  const nextMonthly=nextAll.reduce((s,c)=>s+c.monthly,0);
+  const newThisMonth=DB.filter(c=>{
+    const s=new Date(c.startDate);
+    return s.getFullYear()===t.getFullYear() && s.getMonth()===t.getMonth();
+  });
+  const newPrin=newThisMonth.reduce((s,c)=>s+c.principal,0);
+  const etmCnt=DB.filter(expThisMonth).length;
+  const enmCnt=DB.filter(expNextMonth).length;
+  const diff=nextMonthly-monthly;
+
+  document.getElementById('cMonthly').textContent='$'+monthly.toLocaleString();
+  document.getElementById('cActiveCnt').textContent=active.length+' 筆合約生效中';
+  document.getElementById('cPrincipal').textContent='$'+principal.toLocaleString();
+  document.getElementById('cContractCnt').textContent='共 '+DB.length+' 筆合約';
+  document.getElementById('cNext').textContent='$'+nextMonthly.toLocaleString();
+
+  // 當月追加本金 badge（以10萬為單位）
+  const nb=document.getElementById('cNewBadge');
+  if(newPrin>0){
+    nb.textContent='+$'+(newPrin/10000)+'萬';
+    nb.style.color='var(--gn)';
+  } else { nb.textContent=''; }
+
+  // 下月差額（完整數字）
+  const de=document.getElementById('cNextDiff');
+  if(diff!==0){
+    de.textContent=(diff>0?'+':'-')+'$'+Math.abs(diff).toLocaleString();
+    de.style.color=diff>0?'var(--gn)':'var(--rd)';
+  } else { de.textContent='持平'; de.style.color='var(--dm)'; }
+
+  // 到期提醒
+  if(etmCnt>0||enmCnt>0){
+    document.getElementById('cExpCard').style.display='block';
+    document.getElementById('cExpVal').textContent=(etmCnt>0?'本月 '+etmCnt+' 筆':'')+(etmCnt>0&&enmCnt>0?' ／ ':'')+(enmCnt>0?'下月 '+enmCnt+' 筆':'');
+  } else { document.getElementById('cExpCard').style.display='none'; }
+
+  // 下月預估區塊
+  if(DB.length>0){
+    document.getElementById('nmSec').style.display='block';
+    const nm=new Date(t.getFullYear(),t.getMonth()+1,1);
+    const nmE=new Date(t.getFullYear(),t.getMonth()+2,0);
+    document.getElementById('nmLabel').textContent=nm.toLocaleDateString('zh-TW',{year:'numeric',month:'long'})+' 預估';
+    document.getElementById('nmVal').textContent='$'+nextMonthly.toLocaleString();
+    document.getElementById('nmAnnual').textContent='$'+(nextMonthly*12).toLocaleString();
+
+    // 差額（完整數字）
+    const nd=document.getElementById('nmDiff');
+    if(diff!==0){
+      nd.textContent=(diff>0?'+':'-')+'$'+Math.abs(diff).toLocaleString();
+      nd.style.color=diff>0?'var(--gn)':'var(--rd)';
+    } else { nd.textContent='持平'; nd.style.color='var(--dm)'; }
+
+    const newNext=nextAll.filter(c=>{const fi=new Date(c.firstIncome);return fi>=nm&&fi<=nmE;});
+    if(newNext.length>0){
+      const ni=newNext.reduce((s,c)=>s+c.monthly,0);
+      const np=newNext.reduce((s,c)=>s+c.principal,0);
+      document.getElementById('nmBreak').textContent=`含 ${newNext.length} 筆新生效（本金 $${np.toLocaleString()}），新增 $${ni.toLocaleString()}`;
+    } else {
+      document.getElementById('nmBreak').textContent='與本月相同合約';
+    }
+  } else { document.getElementById('nmSec').style.display='none'; }
+}
+
+// ═══════════════════════════════════════════════
+// 啟動
+// ═══════════════════════════════════════════════
+const now=new Date();
+document.getElementById('hDate').textContent=now.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric'});
+document.getElementById('hMonth').textContent=now.toLocaleDateString('zh-TW',{year:'numeric',month:'long'})+' 收益';
+document.getElementById('aDate').value=nextWed();
+dbLoad();
+render();
+</script>
+</body>
+</html>
