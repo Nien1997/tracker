@@ -444,14 +444,13 @@ document.getElementById('aMinus').addEventListener('click', ()=>{ addUnits=Math.
 document.getElementById('aPlus').addEventListener('click', ()=>{ addUnits++; updateAddPrin(); });
 document.getElementById('aDur').addEventListener('change', refreshAddPrev);
 document.getElementById('aDate').addEventListener('change', function(){
-  if (this.value && !isWed(this.value)) { alert('合約生效日只能選擇週三！'); this.value=nextWed(); }
   refreshAddPrev();
 });
 
 document.getElementById('aAddBtn').addEventListener('click', ()=>{
   const s = document.getElementById('aDate').value;
   if (!addRate) { alert('請選擇利率'); return; }
-  if (!s||!isWed(s)) { alert('請選擇週三作為生效日'); return; }
+  if (!s) { alert('請選擇生效日'); return; }
   const newC = makeContract(addRate, addUnits*100000, document.getElementById('aDur').value, s);
   DB.push(newC);
   dbSave(); render();
@@ -568,7 +567,7 @@ document.getElementById('mSave').addEventListener('click',()=>{
   const s=document.getElementById('eDate').value;
   const memo=document.getElementById('eMemo').value.trim();
   if(!editRate){alert('請選擇利率');return;}
-  if(!s||!isWed(s)){alert('請選擇週三作為生效日');return;}
+  if(!s){alert('請選擇生效日');return;}
   const updatedC = makeContract(editRate,editUnits*100000,document.getElementById('eDur').value,s,editingId,memo);
   DB=DB.map(c=>c.id===editingId?updatedC:c);
   dbSave(); render(); closeModal();
